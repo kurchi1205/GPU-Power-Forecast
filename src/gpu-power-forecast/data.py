@@ -71,7 +71,17 @@ class PowerDataset(Dataset):
         self.feature_std = self.features[:train_size].std(axis=0) + 1e-9
         self.power_mean = self.power[:train_size].mean()
         self.power_std = self.power[:train_size].std() + 1e-9
-
+        with open("../../dataset/normalization.json", "w") as f:
+            json.dump(
+                {
+                    "feature_mean": [float(x) for x in self.feature_mean.astype("float32")],
+                    "feature_std":  [float(x) for x in self.feature_std.astype("float32")],
+                    "power_mean":   float(np.float32(self.power_mean)),
+                    "power_std":    float(np.float32(self.power_std)),
+                },
+                f,
+                indent=2
+            )
 
         self.features = (self.features - self.feature_mean) / self.feature_std
         self.power = (self.power - self.power_mean) / self.power_std
@@ -85,7 +95,7 @@ class PowerDataset(Dataset):
         return torch.tensor(X, dtype=torch.float32), torch.tensor(y, dtype=torch.float32)
 
 if __name__=="__main__":
-    data = PowerDataset(json_path='../metrics_log/merged_log.json')
+    data = PowerDataset(json_path='../../dataset/merged_log.json', add_power_as_lag=True)
     print("Length of data: ", len(data))
     print(data[0])
     print("======================")

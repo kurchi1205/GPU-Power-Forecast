@@ -111,11 +111,11 @@ class LSTMTrainer:
 
             if val_loss is not None:
                 # Save best model
-                if val_loss < self.best_val_loss:
-                    self.best_val_loss = val_loss
-                    self.best_epoch = epoch + 1
-                    self.save(path=os.path.join(self.checkpoint_dir, f"best_model_epoch_{self.best_epoch}_loss_{val_loss}.pt"))
-                    print(f"  → New best model saved! (Val Loss: {val_loss:.4f})")
+                # if val_loss < self.best_val_loss:
+                self.best_val_loss = val_loss
+                self.best_epoch = epoch + 1
+                self.save(path=os.path.join(self.checkpoint_dir, f"best_model_epoch_{self.best_epoch}_loss_{val_loss}.pt"))
+                print(f"  → New best model saved! (Val Loss: {val_loss:.4f})")
                 self.scheduler.step(val_loss)
                 print(f"Epoch {epoch+1:02d} | Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f}")
             else:

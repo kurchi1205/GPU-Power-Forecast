@@ -2,6 +2,9 @@ import json
 import numpy as np
 import torch
 from collections import deque
+from model import PowerLSTM
+import os
+import matplotlib.pyplot as plt
 
 EXOG_KEYS = [
     "fps",
@@ -82,7 +85,8 @@ def stage_a_exog_only_for_max_lag(
         x = normalize(exog_vec(records[i]), exog_mean, exog_std)
         buf.append(x)
 
-        X_np = pad_window_to_seq_len(list(buf), seq_len, pad_mode=pad_mode)
+        # X_np = pad_window_to_seq_len(list(buf), seq_len, pad_mode=pad_mode)
+        X_np = np.array(list(buf), dtype=np.float32)
         X = torch.tensor(X_np[None, :, :], dtype=torch.float32, device=device)
 
         p_norm = exog_model(X).squeeze().item()
@@ -113,11 +117,9 @@ def stage_b_lag_model_rest(
     power_hist = deque(power_hist_seed)   # copy
     feat_buf = deque(maxlen=seq_len)
     preds = []
-
     for rec in records_rest:
         x = normalize(exog_vec(rec), exog_mean, exog_std)
         lagf = power_lag_feats_from_hist(power_hist, power_lags, power_mean, power_std)
-
         if lagf is None:
             # shouldn't happen if stage A ran for max_lag, but just in case:
             p_watts = power_hist[-1] if len(power_hist) else power_mean
@@ -128,7 +130,8 @@ def stage_b_lag_model_rest(
         feat_t = np.concatenate([x, lagf], axis=0)
         feat_buf.append(feat_t)
 
-        X_np = pad_window_to_seq_len(list(feat_buf), seq_len, pad_mode=pad_mode)
+        # X_np = pad_window_to_seq_len(list(feat_buf), seq_len, pad_mode=pad_mode)
+        X_np = np.array(feat_buf, dtype=np.float32)
         X = torch.tensor(X_np[None, :, :], dtype=torch.float32, device=device)
 
         p_norm = lag_model(X).squeeze().item()
@@ -142,8 +145,8 @@ def stage_b_lag_model_rest(
 
 def predict_power_two_stage_only_till_max_lag(
     records,
-    exog_model,
-    lag_model,
+    exog_model_ckpt,
+    lag_model_ckpt,
     seq_len,
     power_lags=(1, 2),
     exog_mean=None,
@@ -155,7 +158,24 @@ def predict_power_two_stage_only_till_max_lag(
 ):
     max_lag = max(power_lags)
 
-    # Stage A: first max_lag records
+    exog_model = PowerLSTM(
+        input_dim=7,
+        hidden_dim=32,
+        num_layers=1,
+        dropout=0.7
+    )
+    exog_model.load_state_dict(torch.load(exog_model_ckpt, map_location="cpu"))
+    exog_model.eval()
+
+    lag_model = PowerLSTM(
+        input_dim=9,
+        hidden_dim=32,
+        num_layers=1,
+        dropout=0.3
+    )
+    lag_model.load_state_dict(torch.load(lag_model_ckpt, map_location="cpu"))
+    lag_model.eval()
+
     preds_a, power_hist = stage_a_exog_only_for_max_lag(
         records=records,
         exog_model=exog_model,
@@ -169,7 +189,6 @@ def predict_power_two_stage_only_till_max_lag(
         pad_mode=pad_mode,
     )
 
-    # Stage B: remaining records
     preds_b = []
     if len(records) > max_lag:
         preds_b = stage_b_lag_model_rest(
@@ -186,26 +205,103 @@ def predict_power_two_stage_only_till_max_lag(
             pad_mode=pad_mode,
         )
 
-    return preds_a + preds_b
+    all_preds = preds_a + preds_b
+
+    # 🔑 NEW: mask first seq_len predictions
+    masked_preds = [None] * min(seq_len, len(all_preds)) + all_preds[seq_len:]
+
+    return masked_preds[:len(records)]
 
 
-my_records_without_power = json.load(open("/Users/prerana1298/computing/repo/distributed-gsplats/metrics_log/merged_log.json"))
-exog_model_ckpt = "checkpoints_seq_len_120_no_power_lag/best_model_epoch_36_loss_0.5544316075943518.pt"
-lag_model_ckpt = "checkpoints_seq_len_120_no_power_lag/best_model_epoch_50_loss_0.015646930248521165.pt"
+def plot_pred_vs_actual_power_normalized(
+    records,
+    preds,
+    power_mean,
+    power_std,
+    out_path="outputs/pred_vs_actual_norm.png",
+    title="GPU Power (Normalized): Predicted vs Actual",
+):
+    os.makedirs(os.path.dirname(out_path) or ".", exist_ok=True)
+
+    actual_norm = []
+    pred_norm = []
+
+    for r, p in zip(records, preds):
+        if p is None:
+            continue
+
+        # normalize actual
+
+        a = (float(r["gpu_power_watts"]) - power_mean) / (power_std + 1e-9)
+        # print("unnormalized: ", r["gpu_power_watts"], "normalized: ", a)
+
+        # normalize predicted (already in watts)
+        pn = (float(p) - power_mean) / (power_std + 1e-9)
+        print("unnormalized actual: ", r["gpu_power_watts"], "normalized actual: ", a, "unnormalized power: ", p, "normalized power: ", pn)
+
+        actual_norm.append(a)
+        pred_norm.append(pn)
+
+    actual_norm = np.array(actual_norm, dtype=np.float32)
+    pred_norm = np.array(pred_norm, dtype=np.float32)
+
+    x = np.arange(len(actual_norm))
+
+    plt.figure()
+    plt.plot(x, actual_norm, label="Actual (normalized)")
+    plt.plot(x, pred_norm, label="Predicted (normalized)")
+    plt.title(title)
+    plt.xlabel("Timestep (after warm-up)")
+    plt.ylabel("Normalized Power")
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(out_path, dpi=150)
+    plt.close()
+
+    print(f"Saved normalized plot to: {out_path}")
+    return actual_norm, pred_norm
 
 
-preds = predict_power_two_stage_only_till_max_lag(
-    records=my_records_without_power[-10:],
-    exog_model=exog_model_ckpt,
-    lag_model=lag_model_ckpt,
-    seq_len=60,
-    power_lags=(1,2),
-    exog_mean=exog_mean,
-    exog_std=exog_std,
-    power_mean=power_mean,
-    power_std=power_std,
-    device="cuda" if torch.cuda.is_available() else "cpu",
-    pad_mode="repeat_first",
-)
 
-print(len(preds), preds[:5])
+if __name__ == "__main__":
+    my_records_without_power = []
+    with open("../../dataset/merged_log.json") as f:
+        for line in f:
+            try:
+                my_records_without_power.append(json.loads(line))
+            except:
+                pass
+
+    exog_model_ckpt = "checkpoints_seq_len_120_no_power_lag/best_model_epoch_86_loss_0.027480796795745176.pt"
+    lag_model_ckpt = "checkpoints_seq_len_120/best_model_epoch_50_loss_0.015646930248521165.pt"
+    norm_meta = json.load(open("../../dataset/normalization.json"))
+    
+    
+    exog_mean = np.array(norm_meta["feature_mean"])
+    exog_std = np.array(norm_meta["feature_std"])
+    
+    power_mean = norm_meta["power_mean"]
+    power_std = norm_meta["power_std"]
+
+
+    preds = predict_power_two_stage_only_till_max_lag(
+        records=my_records_without_power[-4000:],
+        exog_model_ckpt=exog_model_ckpt,
+        lag_model_ckpt=lag_model_ckpt,
+        seq_len=120,
+        power_lags=(1,2),
+        exog_mean=exog_mean,
+        exog_std=exog_std,
+        power_mean=power_mean,
+        power_std=power_std,
+        device="cuda" if torch.cuda.is_available() else "cpu",
+        pad_mode="repeat_first",
+    )
+    plot_pred_vs_actual_power_normalized(
+        records=my_records_without_power[-4000:],
+        preds=preds,
+        power_mean=power_mean,
+        power_std=power_std,
+        out_path="outputs/pred_vs_actual_normalized.png",
+    )
+    
