@@ -157,7 +157,7 @@ def mae_rmse_after_warmup(records, preds, power_mean, power_std):
 if __name__ == "__main__":
     # Load records
     records = []
-    with open("../../dataset/merged_log.json") as f:
+    with open("../../dataset/validation_data/merged_log.json") as f:
         for line in f:
             line = line.strip()
             if not line:
@@ -169,7 +169,7 @@ if __name__ == "__main__":
 
     # Paths
     # exog_model_ckpt = "checkpoints_seq_len_120_no_power_lag/best_model_epoch_86_loss_0.027480796795745176.pt"
-    exog_model_ckpt = "checkpoints_seq_len_120_no_power_lag_80_train/best_model_epoch_67_loss_0.45593543338278025.pt"
+    exog_model_ckpt = "best_models/best_model_epoch_67_loss_0.45593543338278025.pt"
     norm_meta = json.load(open("../../dataset/normalization.json"))
 
     # IMPORTANT: exog stats must be length 7 (match EXOG_KEYS)
