@@ -5,7 +5,7 @@ from plots import plot_predictions
 
 def run_naive():
     # ---- Load dataset ----
-    dataset = PowerDataset("../metrics_log/merged_log.json", seq_len=60)
+    dataset = PowerDataset("../../dataset/merged_log.json", seq_len=120)
 
     # ---- Train / Val split (time-ordered) ----
     split = int(0.8 * len(dataset))

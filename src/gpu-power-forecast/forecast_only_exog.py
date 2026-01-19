@@ -5,6 +5,8 @@ from collections import deque
 from model import PowerLSTM
 import os
 import matplotlib.pyplot as plt
+from metrics import compute_metrics
+
 
 # ----------------------------
 # Config: exogenous features only
@@ -132,24 +134,29 @@ def plot_pred_vs_actual_power_normalized(
 def mae_rmse_after_warmup(records, preds, power_mean, power_std):
     actual = []
     pred = []
+    print(len(records), len(preds))
     for r, p in zip(records, preds):
         if p is None:
             continue
         actual.append(float(r["gpu_power_watts"]))
         pred.append(float(p))
+    print(len(actual), len(pred))
+
     actual = np.array(actual, dtype=np.float32)
     pred = np.array(pred, dtype=np.float32)
 
     mae = float(np.mean(np.abs(pred - actual)))
     rmse = float(np.sqrt(np.mean((pred - actual) ** 2)))
+    huber = compute_metrics(pred, actual, delta=2)
 
     # normalized MAE/RMSE (optional)
     actual_n = (actual - power_mean) / (power_std + 1e-9)
     pred_n = (pred - power_mean) / (power_std + 1e-9)
     mae_n = float(np.mean(np.abs(pred_n - actual_n)))
     rmse_n = float(np.sqrt(np.mean((pred_n - actual_n) ** 2)))
+    huber_n = compute_metrics(pred_n, actual_n, delta=2)
 
-    return {"mae_watts": mae, "rmse_watts": rmse, "mae_norm": mae_n, "rmse_norm": rmse_n}
+    return {"mae_watts": mae, "rmse_watts": rmse, "mae_norm": mae_n, "rmse_norm": rmse_n, "huber_loss": huber, "huber_norm": huber_n}
 
 # ----------------------------
 # Main
@@ -157,7 +164,7 @@ def mae_rmse_after_warmup(records, preds, power_mean, power_std):
 if __name__ == "__main__":
     # Load records
     records = []
-    with open("../../dataset/validation_data/merged_log.json") as f:
+    with open("../../dataset/validation_data_1/merged_log.json") as f:
         for line in f:
             line = line.strip()
             if not line:
@@ -182,7 +189,7 @@ if __name__ == "__main__":
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     # Slice some window to test
-    test_records = records[-900:]
+    test_records = records
 
     # Predict using exog-only model
     preds = predict_power_exog_only(
