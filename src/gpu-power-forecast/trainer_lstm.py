@@ -5,7 +5,12 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
-import wandb
+try:
+    import wandb
+    _WANDB_AVAILABLE = True
+except ImportError:
+    _WANDB_AVAILABLE = False
+
 import matplotlib.pyplot as plt
 import gc
 
@@ -20,7 +25,9 @@ class LSTMTrainer:
         num_epochs=25,
         device=None,
         project="power_model_training",
-        checkpoint_dir="checkpoints"
+        checkpoint_dir="checkpoints",
+        use_wandb=False,
+        log_every=10,
     ):
         self.model = model
         self.train_dataset = train_dataset
@@ -52,10 +59,11 @@ class LSTMTrainer:
         self.best_val_loss = float('inf')
         self.best_epoch = 0
         self.checkpoint_dir = checkpoint_dir
+        self.log_every = log_every
 
-        wandb.init(
-            project=self.project,
-        )
+        self.use_wandb = use_wandb and _WANDB_AVAILABLE
+        if self.use_wandb:
+            wandb.init(project=self.project)
 
     def train_one_epoch(self, epoch):
         self.model.train()
@@ -74,7 +82,8 @@ class LSTMTrainer:
 
             epoch_loss += loss.item()
         train_loss = epoch_loss / len(self.train_loader)
-        wandb.log({"train_loss": train_loss}, step=epoch)
+        if self.use_wandb:
+            wandb.log({"train_loss": train_loss}, step=epoch)
         return train_loss
 
     def validate(self, epoch):
@@ -98,7 +107,8 @@ class LSTMTrainer:
                 y_all.append(y.cpu())
 
         val_loss /= len(self.val_loader)
-        wandb.log({"val_loss": val_loss}, step=epoch)
+        if self.use_wandb:
+            wandb.log({"val_loss": val_loss}, step=epoch)
 
         return val_loss, preds_all, y_all
 
@@ -110,24 +120,24 @@ class LSTMTrainer:
             val_loss, preds, actual = self.validate(epoch)
 
             if val_loss is not None:
-                # Save best model
-                # if val_loss < self.best_val_loss:
-                self.best_val_loss = val_loss
-                self.best_epoch = epoch + 1
-                self.save(path=os.path.join(self.checkpoint_dir, f"best_model_epoch_{self.best_epoch}_loss_{val_loss}.pt"))
-                print(f"  → New best model saved! (Val Loss: {val_loss:.4f})")
+                if val_loss < self.best_val_loss:
+                    self.best_val_loss = val_loss
+                    self.best_epoch = epoch + 1
+                    self.save(path=os.path.join(self.checkpoint_dir, f"best_model_epoch_{self.best_epoch}_loss_{val_loss:.6f}.pt"))
                 self.scheduler.step(val_loss)
-                print(f"Epoch {epoch+1:02d} | Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f}")
+                if (epoch + 1) % self.log_every == 0 or epoch == 0:
+                    print(f"Epoch {epoch+1:03d} | Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f}")
             else:
-                print(f"Epoch {epoch+1:02d} | Train Loss: {train_loss:.4f}")
+                if (epoch + 1) % self.log_every == 0 or epoch == 0:
+                    print(f"Epoch {epoch+1:03d} | Train Loss: {train_loss:.4f}")
 
-            plt.figure(figsize=(10,4))
-            plt.plot(actual[:5], label="Actual")
-            plt.plot(preds[:5], label="Predicted")
-            plt.legend()
-            
-            wandb.log({"pred_vs_actual": wandb.Image(plt)}, step=epoch)
-            plt.close()
+            if self.use_wandb:
+                plt.figure(figsize=(10, 4))
+                plt.plot(actual[:5], label="Actual")
+                plt.plot(preds[:5], label="Predicted")
+                plt.legend()
+                wandb.log({"pred_vs_actual": wandb.Image(plt)}, step=epoch)
+                plt.close()
             gc.collect()
 
     def save(self, path="checkpoints/lstm_power.pt"):

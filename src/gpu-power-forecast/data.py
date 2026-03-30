@@ -94,9 +94,69 @@ class PowerDataset(Dataset):
         y = self.power[idx + self.seq_len]
         return torch.tensor(X, dtype=torch.float32), torch.tensor(y, dtype=torch.float32)
 
+class InstantaneousDataset(Dataset):
+    """
+    Dataset for instantaneous (no-window) models such as MLP.
+    Each sample is (features[t], power[t]) — the model sees only the
+    current-timestep exogenous features and predicts the current power.
+
+    Uses the same 7 features and normalization scheme as PowerDataset
+    so results are directly comparable.
+    """
+
+    def __init__(self, json_path, train_ratio=0.8):
+        # load records
+        records = []
+        with open(json_path) as f:
+            for line in f:
+                try:
+                    records.append(json.loads(line))
+                except:
+                    pass
+
+        self.power = np.array([r["gpu_power_watts"] for r in records], dtype=np.float32)
+
+        self.features = np.array([
+            [
+                r["fps"],
+                r["gs_fps"],
+                r["num_pixels"],
+                r["num_splats"],
+                r["gpu_sm_util_percent"],
+                r["gpu_mem_util_percent"],
+                r["gpu_memory_used_MB"]
+            ]
+            for r in records
+        ], dtype=np.float32)
+
+        # normalize using train split statistics only
+        train_size = int(len(self.features) * train_ratio)
+        self.feature_mean = self.features[:train_size].mean(axis=0)
+        self.feature_std  = self.features[:train_size].std(axis=0) + 1e-9
+        self.power_mean   = self.power[:train_size].mean()
+        self.power_std    = self.power[:train_size].std() + 1e-9
+
+        self.features = (self.features - self.feature_mean) / self.feature_std
+        self.power    = (self.power    - self.power_mean)   / self.power_std
+
+    def __len__(self):
+        return len(self.features)
+
+    def __getitem__(self, idx):
+        # X shape: [D]  (flat vector, no time dimension)
+        X = torch.tensor(self.features[idx], dtype=torch.float32)
+        y = torch.tensor(self.power[idx],    dtype=torch.float32)
+        return X, y
+
+
 if __name__=="__main__":
     data = PowerDataset(json_path='../../dataset/merged_log.json', add_power_as_lag=True)
     print("Length of data: ", len(data))
     print(data[0])
     print("======================")
     print(data[1])
+
+    inst = InstantaneousDataset(json_path='../../dataset/merged_log.json')
+    print("\nInstantaneousDataset length:", len(inst))
+    x, y = inst[0]
+    print("X shape:", x.shape, "  y:", y)

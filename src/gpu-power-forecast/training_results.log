@@ -1,0 +1,185 @@
+
+GPU Power Forecast — Full Training Run
+Started : 2026-03-30 18:34:12
+Python  : Python 3.12.4
+Device  : mps
+================================================================
+================================================================
+>>> [Naive Baseline]  started at 2026-03-30 18:34:14
+================================================================
+Naive Baseline Results
+----------------------
+HUBER: 1.222
+MAE: 1.330
+RMSE: 1.642
+>>> [Naive Baseline]  finished at 2026-03-30 18:35:01
+
+================================================================
+>>> [InstantaneousMLP]  started at 2026-03-30 18:35:01
+================================================================
+Using device: mps
+Epoch 001 | Train Loss: 0.4558 | Val Loss: 1.7656
+Epoch 010 | Train Loss: 0.3414 | Val Loss: 2.0095
+Epoch 020 | Train Loss: 0.3362 | Val Loss: 1.9488
+Epoch 030 | Train Loss: 0.3287 | Val Loss: 2.0203
+Epoch 040 | Train Loss: 0.3271 | Val Loss: 1.9623
+Epoch 050 | Train Loss: 0.3331 | Val Loss: 1.9865
+Epoch 060 | Train Loss: 0.3311 | Val Loss: 2.0314
+Epoch 070 | Train Loss: 0.3254 | Val Loss: 2.0360
+Epoch 080 | Train Loss: 0.3329 | Val Loss: 2.0002
+Epoch 090 | Train Loss: 0.3324 | Val Loss: 2.0310
+Epoch 100 | Train Loss: 0.3298 | Val Loss: 1.9851
+
+Best val loss: 1.701162
+
+InstantaneousMLP — Validation Results (de-normalised)
+------------------------------------------------------
+  MAE   : 29.053 W
+  RMSE  : 33.383 W
+  Huber : 56.131
+>>> [InstantaneousMLP]  finished at 2026-03-30 18:35:41
+
+================================================================
+>>> [WindowedLinear + MLP]  started at 2026-03-30 18:35:41
+================================================================
+Using device: mps
+
+=== WindowedLinear ===
+  Epoch 001 | Train: 0.3372 | Val: 1.0775
+  Epoch 010 | Train: 0.2001 | Val: 1.0160
+  Epoch 020 | Train: 0.1839 | Val: 1.0283
+  Epoch 030 | Train: 0.1808 | Val: 1.0477
+  Epoch 040 | Train: 0.1784 | Val: 1.0534
+  Epoch 050 | Train: 0.1790 | Val: 1.0526
+  Epoch 060 | Train: 0.1797 | Val: 1.0583
+  Epoch 070 | Train: 0.1794 | Val: 1.0548
+  Epoch 080 | Train: 0.1797 | Val: 1.0557
+  Epoch 090 | Train: 0.1797 | Val: 1.0558
+  Epoch 100 | Train: 0.1796 | Val: 1.0558
+  Best val loss: 0.862861
+  → MAE: 18.066 W | RMSE: 21.738 W | Huber: 34.180
+
+=== WindowedMLP ===
+  Epoch 001 | Train: 0.2950 | Val: 0.8278
+  Epoch 010 | Train: 0.1292 | Val: 1.0118
+  Epoch 020 | Train: 0.0971 | Val: 0.8662
+  Epoch 030 | Train: 0.1048 | Val: 0.9947
+  Epoch 040 | Train: 0.0968 | Val: 0.9228
+  Epoch 050 | Train: 0.0924 | Val: 0.8557
+  Epoch 060 | Train: 0.0915 | Val: 0.8964
+  Epoch 070 | Train: 0.0888 | Val: 0.8908
+  Epoch 080 | Train: 0.0866 | Val: 0.8712
+  Epoch 090 | Train: 0.0931 | Val: 0.8910
+  Epoch 100 | Train: 0.0890 | Val: 0.8957
+  Best val loss: 0.795055
+  → MAE: 17.076 W | RMSE: 22.180 W | Huber: 32.188
+
+=== Summary ===
+Model                   MAE     RMSE    Huber
+----------------------------------------------
+WindowedLinear       18.066   21.738   34.180
+WindowedMLP          17.076   22.180   32.188
+>>> [WindowedLinear + MLP]  finished at 2026-03-30 18:36:27
+
+================================================================
+>>> [PowerGRU + PowerRNN]  started at 2026-03-30 18:36:27
+================================================================
+Using device: mps
+
+=== PowerGRU ===
+  Epoch 001 | Train: 0.5976 | Val: 2.0893
+  Epoch 010 | Train: 0.3218 | Val: 1.4306
+  Epoch 020 | Train: 0.2451 | Val: 1.0596
+  Epoch 030 | Train: 0.2334 | Val: 0.9162
+  Epoch 040 | Train: 0.2242 | Val: 0.8894
+  Epoch 050 | Train: 0.2198 | Val: 0.8397
+  Epoch 060 | Train: 0.2255 | Val: 0.8433
+  Epoch 070 | Train: 0.2181 | Val: 0.8118
+  Epoch 080 | Train: 0.2080 | Val: 0.8006
+  Epoch 090 | Train: 0.2148 | Val: 0.7957
+  Epoch 100 | Train: 0.2086 | Val: 0.7832
+  Best val loss: 0.783225
+  → MAE: 17.160 W | RMSE: 20.526 W | Huber: 32.346
+
+=== PowerRNN ===
+  Epoch 001 | Train: 0.5795 | Val: 2.1776
+  Epoch 010 | Train: 0.3719 | Val: 1.9067
+  Epoch 020 | Train: 0.3263 | Val: 1.6450
+  Epoch 030 | Train: 0.2860 | Val: 1.4000
+  Epoch 040 | Train: 0.2915 | Val: 1.3353
+  Epoch 050 | Train: 0.2582 | Val: 1.3423
+  Epoch 060 | Train: 0.2471 | Val: 1.3567
+  Epoch 070 | Train: 0.2522 | Val: 1.2726
+  Epoch 080 | Train: 0.2492 | Val: 1.4011
+  Epoch 090 | Train: 0.2522 | Val: 1.3554
+  Epoch 100 | Train: 0.2419 | Val: 1.2918
+  Best val loss: 1.207791
+  → MAE: 24.007 W | RMSE: 26.522 W | Huber: 46.043
+
+=== Summary ===
+Model             MAE     RMSE    Huber
+----------------------------------------
+PowerGRU       17.160   20.526   32.346
+PowerRNN       24.007   26.522   46.043
+>>> [PowerGRU + PowerRNN]  finished at 2026-03-30 19:02:03
+
+================================================================
+>>> [PowerLSTM]  started at 2026-03-30 19:02:03
+================================================================
+/Users/prerana1298/miniconda3/lib/python3.12/site-packages/torch/nn/modules/loss.py:1119: UserWarning: Using a target size (torch.Size([1])) that is different to the input size (torch.Size([])). This will likely lead to incorrect results due to broadcasting. Please ensure they have the same size.
+  return F.huber_loss(input, target, reduction=self.reduction, delta=self.delta)
+=== PowerLSTM ===
+Using device: mps
+Training on mps for 100 epochs...
+Model saved to checkpoints_seq_len_120_no_power_lag_80_train/best_model_epoch_1_loss_2.713129.pt
+Epoch 001 | Train Loss: 0.7264 | Val Loss: 2.7131
+Model saved to checkpoints_seq_len_120_no_power_lag_80_train/best_model_epoch_2_loss_2.525151.pt
+Model saved to checkpoints_seq_len_120_no_power_lag_80_train/best_model_epoch_3_loss_2.313477.pt
+Model saved to checkpoints_seq_len_120_no_power_lag_80_train/best_model_epoch_4_loss_2.227690.pt
+Model saved to checkpoints_seq_len_120_no_power_lag_80_train/best_model_epoch_5_loss_2.119759.pt
+Model saved to checkpoints_seq_len_120_no_power_lag_80_train/best_model_epoch_6_loss_1.953257.pt
+Model saved to checkpoints_seq_len_120_no_power_lag_80_train/best_model_epoch_7_loss_1.842213.pt
+Model saved to checkpoints_seq_len_120_no_power_lag_80_train/best_model_epoch_8_loss_1.658593.pt
+Model saved to checkpoints_seq_len_120_no_power_lag_80_train/best_model_epoch_9_loss_1.615764.pt
+Model saved to checkpoints_seq_len_120_no_power_lag_80_train/best_model_epoch_10_loss_1.476778.pt
+Epoch 010 | Train Loss: 0.3044 | Val Loss: 1.4768
+Model saved to checkpoints_seq_len_120_no_power_lag_80_train/best_model_epoch_12_loss_1.469866.pt
+Model saved to checkpoints_seq_len_120_no_power_lag_80_train/best_model_epoch_13_loss_1.391812.pt
+Model saved to checkpoints_seq_len_120_no_power_lag_80_train/best_model_epoch_14_loss_1.236838.pt
+Model saved to checkpoints_seq_len_120_no_power_lag_80_train/best_model_epoch_16_loss_1.114313.pt
+Model saved to checkpoints_seq_len_120_no_power_lag_80_train/best_model_epoch_18_loss_0.895979.pt
+Model saved to checkpoints_seq_len_120_no_power_lag_80_train/best_model_epoch_19_loss_0.775915.pt
+Model saved to checkpoints_seq_len_120_no_power_lag_80_train/best_model_epoch_20_loss_0.770913.pt
+Epoch 020 | Train Loss: 0.2538 | Val Loss: 0.7709
+Model saved to checkpoints_seq_len_120_no_power_lag_80_train/best_model_epoch_24_loss_0.720254.pt
+Model saved to checkpoints_seq_len_120_no_power_lag_80_train/best_model_epoch_25_loss_0.695819.pt
+Model saved to checkpoints_seq_len_120_no_power_lag_80_train/best_model_epoch_29_loss_0.692640.pt
+Model saved to checkpoints_seq_len_120_no_power_lag_80_train/best_model_epoch_30_loss_0.671541.pt
+Epoch 030 | Train Loss: 0.2286 | Val Loss: 0.6715
+Model saved to checkpoints_seq_len_120_no_power_lag_80_train/best_model_epoch_32_loss_0.596446.pt
+Epoch 040 | Train Loss: 0.2088 | Val Loss: 0.6155
+Model saved to checkpoints_seq_len_120_no_power_lag_80_train/best_model_epoch_42_loss_0.559869.pt
+Model saved to checkpoints_seq_len_120_no_power_lag_80_train/best_model_epoch_44_loss_0.544567.pt
+Model saved to checkpoints_seq_len_120_no_power_lag_80_train/best_model_epoch_47_loss_0.491772.pt
+Epoch 050 | Train Loss: 0.2036 | Val Loss: 0.6029
+Model saved to checkpoints_seq_len_120_no_power_lag_80_train/best_model_epoch_52_loss_0.487173.pt
+Model saved to checkpoints_seq_len_120_no_power_lag_80_train/best_model_epoch_59_loss_0.482531.pt
+Epoch 060 | Train Loss: 0.1874 | Val Loss: 0.6065
+Model saved to checkpoints_seq_len_120_no_power_lag_80_train/best_model_epoch_67_loss_0.455935.pt
+Epoch 070 | Train Loss: 0.1710 | Val Loss: 0.5961
+Epoch 080 | Train Loss: 0.1691 | Val Loss: 0.7848
+Epoch 090 | Train Loss: 0.1713 | Val Loss: 0.6795
+Epoch 100 | Train Loss: 0.1729 | Val Loss: 0.6172
+Model saved to checkpoints_seq_len_120_no_power_lag_80_train/gpu_power_lstm.pt
+
+PowerLSTM — Validation Results (de-normalised)
+-----------------------------------------------
+  MAE   : 14.300 W
+  RMSE  : 17.255 W
+  Huber : 26.615
+>>> [PowerLSTM]  finished at 2026-03-30 19:10:02
+
+================================================================
+All runs completed at 2026-03-30 19:10:02
+Full log saved to: training_results.log
+================================================================
