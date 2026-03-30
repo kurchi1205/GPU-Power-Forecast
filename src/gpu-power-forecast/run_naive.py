@@ -1,3 +1,4 @@
+import numpy as np
 from data import PowerDataset
 from naive_model import NaiveLastValueModel
 from metrics import compute_metrics
@@ -5,10 +6,10 @@ from plots import plot_predictions
 
 def run_naive():
     # ---- Load dataset ----
-    dataset = PowerDataset("../../dataset/merged_log.json", seq_len=120)
+    dataset = PowerDataset("../../dataset/validation_data_2/merged_log.json", seq_len=120)
 
     # ---- Train / Val split (time-ordered) ----
-    split = int(0.8 * len(dataset))
+    split = int(0 * len(dataset))
     train_idx = list(range(0, split))
     val_idx   = list(range(split, len(dataset)))
 
@@ -19,10 +20,15 @@ def run_naive():
     preds, actual = model.predict(dataset, val_idx)
 
     huber = compute_metrics(preds, actual, delta=2)
+    mae = float(np.mean(np.abs(preds - actual)))
+    rmse = float(np.sqrt(np.mean((preds - actual) ** 2)))
+
 
     print("Naive Baseline Results")
     print("----------------------")
     print(f"HUBER: {huber:.3f}")
+    print(f"MAE: {mae:.3f}")
+    print(f"RMSE: {rmse:.3f}")
 
     # ---- Plot ----
     plot_predictions(actual, preds)

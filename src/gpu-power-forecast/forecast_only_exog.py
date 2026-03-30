@@ -164,7 +164,7 @@ def mae_rmse_after_warmup(records, preds, power_mean, power_std):
 if __name__ == "__main__":
     # Load records
     records = []
-    with open("../../dataset/validation_data_1/merged_log.json") as f:
+    with open("../../dataset/validation_data_2/merged_log.json") as f:
         for line in f:
             line = line.strip()
             if not line:
@@ -212,7 +212,7 @@ if __name__ == "__main__":
         preds=preds,
         power_mean=power_mean,
         power_std=power_std,
-        out_path="outputs/pred_vs_actual_normalized_exog_only.png",
+        out_path="outputs/pred_vs_actual_normalized_exog_only_val_data_2.png",
         title="GPU Power (Normalized): Exog-only Predicted vs Actual",
     )
 

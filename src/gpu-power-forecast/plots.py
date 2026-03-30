@@ -1,7 +1,7 @@
 import os 
 import matplotlib.pyplot as plt
 
-def plot_predictions(actual, preds, n=200, title="Naive Baseline vs Actual"):
+def plot_predictions(actual, preds, n=10000, title="Naive Baseline vs Actual"):
     plt.figure(figsize=(12,4))
     plt.plot(actual[:n], label="Actual", color="orange")
     plt.plot(preds[:n], label="Naive Prediction", linestyle="--", color="blue")
@@ -13,4 +13,4 @@ def plot_predictions(actual, preds, n=200, title="Naive Baseline vs Actual"):
     plt.tight_layout()
     if not os.path.exists("res_plots"):
         os.makedirs("res_plots")
-    plt.savefig("res_plots/naive_model_loss.png")
+    plt.savefig("res_plots/naive_model_loss_val_2.png")
